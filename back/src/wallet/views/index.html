@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+</head>
+<body>
+  hello wallet
+  <button id="wallet_btn">지갑생성</button>
+
+  <ul id="wallet_list">
+    <li>
+      privateKey: <span class="privateKey"></span>
+    </li>
+    <li>
+      publicKey: <span class="publicKey"></span>
+    </li>
+    <li>
+      account: <span class="account"></span>
+    </li>
+    <li>
+      balance: <span class="balance"></span>
+    </li>
+  </ul>
+  <h2>Wallet List</h2>
+  <ul id="wallet_list2"></ul>
+
+  <h3>transaction</h3>
+  <form id="transaction">
+    <ul>
+      <li>received: <input type="text" id="received" placeholder="보낼 계정" /></li>
+      <li>amount: <input type="text" id="amount" placeholder="보낼 금액"/></li>
+    </ul>
+    <button type="submit">전송</button>
+  </form>
+</body>
+
+<script type="text/javascript">
+  const walletBtn = document.querySelector("#wallet_btn")
+  const walletUl = document.querySelector("#wallet_list2")
+  const transactionForm = document.querySelector("#transaction")
+  
+  const createWallet = async () => {
+    //axios 3000
+    const response = await axios.post('http://127.0.0.1:3000/wallet')
+    console.log('response', response)
+    view(response.data)
+    walletList()
+  }
+
+  const view = (accounts) => {
+    const account = document.querySelector('.account')
+    const privateKey = document.querySelector('.privateKey')
+    const publicKey = document.querySelector('.publicKey')
+    const balance = document.querySelector('.balance')
+
+    privateKey.innerHTML = accounts.privateKey
+    publicKey.innerHTML = accounts.publicKey
+    account.innerHTML = accounts.account
+    balance.innerHTML = accounts.balance
+  }
+
+  const walletList = async () => {
+    
+    const {data} = await axios.get('http://127.0.0.1:3000/wallet')
+    //response a- data - ["asdfadf", "asdfsfd"]
+    const accountList = data.map(account => `<li>${account}</li>`).join("")
+    walletUl.innerHTML = accountList
+  }
+
+  const clickHandler = async (e)=>{
+    try{
+      const account = e.target.innerHTML
+      if(account.length !== 40) return
+
+      const {data} = await axios.get(`http://127.0.0.1:3000/wallet/${account}`)
+      view(data)
+    } catch(e){
+      console.error(e.message)
+    }
+  }
+
+  const submitHandler = async (e) => {
+    e.preventDefault()
+    const request = {
+      sender: document.querySelector(".account").innerHTML,
+      received: e.target.received.value,
+      amount: e.target.amount.value
+    }
+
+    //post /transaction
+    await axios.post('http://127.0.0.1:3000/transaction',{
+      ...request
+    })
+  }
+
+  walletBtn.addEventListener('click', createWallet)
+  walletUl.addEventListener('click', clickHandler)
+  transactionForm.addEventListener('submit', submitHandler)
+  walletList()
+</script>
+</html>
